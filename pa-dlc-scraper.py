@@ -3,6 +3,7 @@
 from bs4 import BeautifulSoup
 import requests
 import re
+import plistlib
 
 class DlcEpisode:
     def __init__(self, url, title, date):
@@ -53,12 +54,31 @@ class DlcHomepage:
         for s in self.seasons:
             s.show()
 
+class ItunesLibrary:
+    def __init__(self, library_xml_file):
+        self.library = plistlib.load(open(library_xml_file, 'rb'))
+        self.track_names = []
+        for track_id in self.library['Tracks']:
+            self.track_names.append(self.library['Tracks'][track_id]['Name'])
+
+    def show(self):
+        for n in self.track_names:
+            print(n)
+
+    def search_by_name(self, name):
+        return name in self.track_names
+
 h = DlcHomepage()
 
 h.show()
 
+iTunes_library_file = "/Users/riceowlguy/Music/iTunes/iTunes Music Library.xml"
+l = ItunesLibrary(iTunes_library_file)
+
+l.show()
+
+
 # @TODOs
-# 1. load iTunes library 
-# 2. check to see if any episodes exist that I haven't already downloaded/imported
-# 3. download new episodes and rename/edit mp3 tags
+# 1. check to see if any episodes exist that I haven't already downloaded/imported
+# 2. download new episodes and rename/edit mp3 tags
 
