@@ -8,11 +8,14 @@ import plistlib
 class DlcEpisode:
     def __init__(self, url, title, date):
         self.url = url
-        self.title = title
+        self.title = self.closing_quote_to_apostrophe(title)
         self.date = date
 
     def show(self):
         print("url = {}, title = {}, date = {}".format(self.url, self.title, self.date))
+
+    def closing_quote_to_apostrophe(self, title):
+        return title.replace("’","'")
 
 class DlcSeason:
     def __init__(self, season_url):
@@ -36,6 +39,9 @@ class DlcSeason:
         for e in self.episodes:
             e.show()
 
+    def get_episodes(self):
+        return self.episodes
+
 class DlcHomepage:
     def __init__(self):
         self.seasons = []
@@ -54,6 +60,13 @@ class DlcHomepage:
         for s in self.seasons:
             s.show()
 
+    def get_episodes(self):
+        full_ep_list = []
+        for s in self.seasons:
+            full_ep_list += s.get_episodes()
+        return full_ep_list
+
+
 class ItunesLibrary:
     def __init__(self, library_xml_file):
         self.library = plistlib.load(open(library_xml_file, 'rb'))
@@ -66,19 +79,32 @@ class ItunesLibrary:
             print(n)
 
     def search_by_name(self, name):
-        return name in self.track_names
+        for track_name in self.track_names:
+            #print("searching for {} in {}".format(name, track_name))
+            if re.search(re.escape(name), track_name):
+                return True
+        return False
 
 h = DlcHomepage()
 
-h.show()
+#h.show()
 
 iTunes_library_file = "/Users/riceowlguy/Music/iTunes/iTunes Music Library.xml"
 l = ItunesLibrary(iTunes_library_file)
 
-l.show()
+#l.show()
+
+for e in h.get_episodes():
+    if l.search_by_name(e.title):
+        pass
+        #print("Found episode {} in library".format(e.title))
+    else:
+        print("Need to download", e.title)
+
 
 
 # @TODOs
-# 1. check to see if any episodes exist that I haven't already downloaded/imported
-# 2. download new episodes and rename/edit mp3 tags
+# 1. download new episodes
+# 2. rename and edit .mp3 tags
+# 3. add to iTunes
 
