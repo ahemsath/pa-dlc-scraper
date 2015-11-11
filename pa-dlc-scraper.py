@@ -16,6 +16,20 @@ class DlcEpisode:
 
     def closing_quote_to_apostrophe(self, title):
         return title.replace("’","'")
+    
+    def get_canonical_title(self):
+        (month,day,year) = self.date.split('/')
+        return "{}-{}-{} {}.mp3".format(year,month,day, self.title)
+
+    def download(self):
+        local_filename = self.get_canonical_title()
+        # NOTE the stream=True parameter
+        r = requests.get(self.url, stream=True)
+        with open(local_filename, 'wb') as f:
+            for chunk in r.iter_content(chunk_size=1024): 
+                if chunk: # filter out keep-alive new chunks
+                    f.write(chunk)
+        return local_filename
 
 class DlcSeason:
     def __init__(self, season_url):
@@ -30,7 +44,7 @@ class DlcSeason:
                 ep_title = a.get("title")
                 h = a.find('h2')
                 s = h.find('strong')
-                ep_date = s.contents
+                ep_date = s.contents[0]
                 self.episodes.append(DlcEpisode(ep_url, ep_title, ep_date))
         else:
             print("Error getting PADC Season Page ({}): {}".format(season_url, self.request.reason))
@@ -100,6 +114,8 @@ for e in h.get_episodes():
         #print("Found episode {} in library".format(e.title))
     else:
         print("Need to download", e.title)
+        local_filename = e.download()
+        print("Downloaded to", local_filename)
 
 
 
