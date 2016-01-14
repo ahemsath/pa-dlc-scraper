@@ -4,12 +4,15 @@ from bs4 import BeautifulSoup
 import requests
 import re
 import plistlib
+import eyed3
 
 class DlcEpisode:
     def __init__(self, url, title, date):
         self.url = url
         self.title = self.closing_quote_to_apostrophe(title)
         self.date = date
+        (month,day,year) = self.date.split('/')
+        self.local_filename = "{}-{}-{} {}.mp3".format(year,month,day, self.title)
 
     def show(self):
         print("url = {}, title = {}, date = {}".format(self.url, self.title, self.date))
@@ -17,19 +20,20 @@ class DlcEpisode:
     def closing_quote_to_apostrophe(self, title):
         return title.replace("’","'")
     
-    def get_canonical_title(self):
-        (month,day,year) = self.date.split('/')
-        return "{}-{}-{} {}.mp3".format(year,month,day, self.title)
-
     def download(self):
-        local_filename = self.get_canonical_title()
         # NOTE the stream=True parameter
         r = requests.get(self.url, stream=True)
-        with open(local_filename, 'wb') as f:
+        with open(self.local_filename, 'wb') as f:
             for chunk in r.iter_content(chunk_size=1024): 
                 if chunk: # filter out keep-alive new chunks
                     f.write(chunk)
-        return local_filename
+
+    def set_tags(self):
+        song = eyed3.load(self.local_filename)
+        song.initTag()
+        song.tag.artist = "Mike Krahulik and Jerry Holkins"
+        song.tag.album = "Downloadable Content, The Penny Arcade Podcast"
+        song.tag.save()
 
 class DlcSeason:
     def __init__(self, season_url):
@@ -115,12 +119,11 @@ for e in h.get_episodes():
     else:
         print("Need to download", e.title)
         local_filename = e.download()
-        print("Downloaded to", local_filename)
+        print("Downloaded to", e.local_filename)
+        #e.set_tags()
 
 
 
 # @TODOs
-# 1. download new episodes
-# 2. rename and edit .mp3 tags
-# 3. add to iTunes
+# 1. add to iTunes
 
